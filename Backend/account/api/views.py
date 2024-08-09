@@ -27,8 +27,6 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from django.contrib.auth import get_user_model
 from rest_framework import generics
-from account.models import Order
-from .serializers import OrderSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -105,28 +103,3 @@ class LogoutView(APIView):
 
     
 
-class OrderListCreateView(generics.ListCreateAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
-
-class OrderRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Order.objects.all()
-    serializer_class = OrderSerializer
-
-class SummaryView(APIView):
-    # authentication_classes = [IsAdminUser]
-    def get(self, request):
-        total_orders = Order.objects.count()
-        total_revenue = Order.objects.aggregate(
-           total_revenue=Sum(F('amount_per_piece') * F('quantity'))
-        )['total_revenue'] or 0
-        completed_orders = Order.objects.filter(order_status='FINISHED').count()  # Adjust status if needed
-        pending_orders = total_orders - completed_orders
-
-        data = {
-            'total_orders': total_orders,
-            'total_revenue': total_revenue,
-            'pending_orders': pending_orders,
-            'completed_orders': completed_orders
-        }
-        return Response(data, status=status.HTTP_200_OK)

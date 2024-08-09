@@ -12,7 +12,7 @@ import { set_user_basic_details } from '../../Redux/userBasicDetails/userBasicDe
 import axios from 'axios'
 import Authenticator from "../../pages/Authentication/Authenticator";
 import Page404 from "../../components/404/Page404";
-import OrderCreation from "../../pages/userSide/OrderCreation";
+// import OrderCreation from "../../pages/userSide/OrderCreation";
 import OrderList from "../../components/Forms/OrderList";
 
 
@@ -62,8 +62,7 @@ function UserWrapper() {
     children:[
       {path: "/auth/*", element:<Authenticator/>},
       {path: "/", element: <UserHome/>},
-      {path: "/create-order", element: <OrderCreation/>},
-      {path: "/orders", element: <OrderList/>},
+   
       
       
 
