@@ -22,6 +22,7 @@ import AdminLogRoute from "../../components/Private/AdminLogRoute";
 import VarificationDoc from "../../pages/admin/VarificationDoc";
 import Order from "../../pages/admin/Order";
 import PendingOrder from "../../pages/admin/PendingOrder";
+import BranchList from "../../components/Branch/BranchList";
 
 function AdminWrapper() {
   const routes = useRoutes([
@@ -45,7 +46,7 @@ function AdminWrapper() {
       ),
       children: [
         { path: "/", element: <Dashboard /> },
-        { path: "/order", element: <Order /> },
+        { path: "/order", element: <BranchList/> },
         { path: "/pending-order", element: <PendingOrder /> },
         
       ],
