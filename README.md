@@ -5,7 +5,7 @@ which supplies necessary items to tea shops and bakery branches. The system trac
 manufacturing and expiry dates, and inventory updates. Branches can request products from the store, 
 and upon approval, the inventory is updated, and notifications are sent.
 
-**Technologies Used**_
+**Technologies Used**
 
 Frontend: React.js
 Backend: Django REST framework
