@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import AsyncSelect from 'react-select/async';
-import ProductForm from './ProductForm';
-import ProductEditForm from './ProductEditForm'; // Import the new ProductEditForm component
-import { baseUrl } from '../../utils/constants/Constants';
-import Swal from 'sweetalert2';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import AsyncSelect from "react-select/async";
+import ProductForm from "./ProductForm";
+import ProductEditForm from "./ProductEditForm"; // Import the new ProductEditForm component
+import { baseUrl } from "../../utils/constants/Constants";
+import Swal from "sweetalert2";
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -20,17 +20,22 @@ const ProductList = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get(baseUrl + 'store/products/');
+      const response = await axios.get(baseUrl + "store/products/");
       setProducts(response.data.results);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error("Error fetching products:", error);
     }
   };
 
   const loadProductIds = async (inputValue) => {
     if (!inputValue) return [];
-    const response = await axios.get(`${baseUrl}store/products/search_codes/?query=${inputValue}`);
-    return response.data.map(product => ({ label: product.product_code, value: product.product_code }));
+    const response = await axios.get(
+      `${baseUrl}store/products/search_codes/?query=${inputValue}`
+    );
+    return response.data.map((product) => ({
+      label: product.product_code,
+      value: product.product_code,
+    }));
   };
 
   const handleProductIdChange = async (selectedOption) => {
@@ -46,43 +51,49 @@ const ProductList = () => {
 
     // Fetch total quantity for the selected product code
     try {
-      const response = await axios.get(`${baseUrl}store/products/${productCode}/total_stock/`);
+      const response = await axios.get(
+        `${baseUrl}store/products/${productCode}/total_stock/`
+      );
       setTotalQuantity(response.data.total_stock);
 
       // Fetch product details by product ID
-      const productResponse = await axios.get(`${baseUrl}store/products/?product_code=${productCode}`);
+      const productResponse = await axios.get(
+        `${baseUrl}store/products/?product_code=${productCode}`
+      );
       setProducts(productResponse.data.results); // Filter products to show only the selected product
     } catch (error) {
-      console.error('Error fetching product or total quantity:', error);
+      console.error("Error fetching product or total quantity:", error);
       setTotalQuantity(null);
     }
   };
 
-  const deleteProduct = async (productCode) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: 'Do you want to delete this product?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Yes, delete it!',
-        cancelButtonText: 'Cancel',
-      });
-
+  const deleteProduct = async (productId) => {
+    Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        await axios.delete(`${baseUrl}store/products/${productCode}/`);
-        Swal.fire('Deleted!', 'Your product has been deleted.', 'success');
-        fetchProducts();
+        try {
+          await axios.delete(`${baseUrl}store/products/${productId}/`); // Use productId instead of productCode
+          fetchProducts(); // Refresh the product list after deletion
+          Swal.fire("Deleted!", "Product has been deleted.", "success");
+        } catch (error) {
+          console.error("Error deleting product:", error);
+          Swal.fire("Error!", "Failed to delete the product.", "error");
+        }
       }
-    } catch (error) {
-      console.error('Error deleting product:', error);
-      Swal.fire('Error!', 'Failed to delete the product.', 'error');
-    }
+    });
   };
 
   const editProduct = (product) => {
-    setEditingProduct(product);  // Set the product to be edited
-    setShowModal(true);          // Show the modal
+    setEditingProduct(product); // Set the product to be edited
+    setShowModal(true); // Show the modal
   };
 
   const filterExpiredProducts = () => {
@@ -90,7 +101,7 @@ const ProductList = () => {
   };
 
   const filteredProducts = showExpiredOnly
-    ? products.filter(product => new Date(product.expiry_date) < new Date())
+    ? products.filter((product) => new Date(product.expiry_date) < new Date())
     : products;
 
   return (
@@ -102,7 +113,7 @@ const ProductList = () => {
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             onClick={() => {
               setEditingProduct(null); // Reset the editing product
-              setShowModal(true);      // Show the modal for creating a new product
+              setShowModal(true); // Show the modal for creating a new product
             }}
           >
             Add Stock / Create Product
@@ -111,7 +122,7 @@ const ProductList = () => {
             className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
             onClick={filterExpiredProducts}
           >
-            {showExpiredOnly ? 'Show All Products' : 'Show Expired Products'}
+            {showExpiredOnly ? "Show All Products" : "Show Expired Products"}
           </button>
         </div>
       </div>
@@ -149,25 +160,39 @@ const ProductList = () => {
               {filteredProducts.map((product) => {
                 const stockClass =
                   product.quantity === 0
-                    ? 'bg-red-100'
+                    ? "bg-red-100"
                     : product.quantity < 10
-                    ? 'bg-yellow-100'
-                    : '';
+                    ? "bg-yellow-100"
+                    : "";
 
                 return (
                   <tr
                     key={product.product_code}
                     className={`border-b border-gray-200 hover:bg-gray-100 ${stockClass}`}
                   >
-                    <td className="py-3 px-6 text-left">{product.product_code}</td>
+                    <td className="py-3 px-6 text-left">
+                      {product.product_code}
+                    </td>
                     <td className="py-3 px-6 text-left">{product.name}</td>
                     <td className="py-3 px-6 text-left">{product.barcode}</td>
-                    <td className="py-3 px-6 text-left">{product.category_name}</td>
-                    <td className="py-3 px-6 text-left">{product.brand_name}</td>
-                    <td className="py-3 px-6 text-left">{product.supplier_name}</td>
-                    <td className="py-3 px-6 text-left">{product.purchase_date}</td>
-                    <td className="py-3 px-6 text-left">{product.manufacturing_date}</td>
-                    <td className="py-3 px-6 text-left">{product.expiry_date}</td>
+                    <td className="py-3 px-6 text-left">
+                      {product.category_name}
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      {product.brand_name}
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      {product.supplier_name}
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      {product.purchase_date}
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      {product.manufacturing_date}
+                    </td>
+                    <td className="py-3 px-6 text-left">
+                      {product.expiry_date}
+                    </td>
                     <td className="py-3 px-6 text-left">{product.quantity}</td>
                     <td className="py-3 px-6 text-center space-x-2">
                       <button
@@ -178,7 +203,7 @@ const ProductList = () => {
                       </button>
                       <button
                         className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                        onClick={() => deleteProduct(product.product_code)}
+                        onClick={() => deleteProduct(product.id)} // Pass the product's id
                       >
                         Delete
                       </button>
@@ -191,7 +216,8 @@ const ProductList = () => {
         </div>
       ) : (
         <div className="text-center py-8 text-gray-500">
-          No products available. Add stock or create a new product to get started.
+          No products available. Add stock or create a new product to get
+          started.
         </div>
       )}
 
