@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AsyncSelect from 'react-select/async';
 import ProductForm from './ProductForm';
+import ProductEditForm from './ProductEditForm'; // Import the new ProductEditForm component
 import { baseUrl } from '../../utils/constants/Constants';
 import Swal from 'sweetalert2';
 
@@ -36,6 +37,7 @@ const ProductList = () => {
     if (!selectedOption) {
       setSelectedProduct(null);
       setTotalQuantity(null);
+      fetchProducts(); // Reload all products if no filter is applied
       return;
     }
 
@@ -46,8 +48,12 @@ const ProductList = () => {
     try {
       const response = await axios.get(`${baseUrl}store/products/${productCode}/total_stock/`);
       setTotalQuantity(response.data.total_stock);
+
+      // Fetch product details by product ID
+      const productResponse = await axios.get(`${baseUrl}store/products/?product_code=${productCode}`);
+      setProducts(productResponse.data.results); // Filter products to show only the selected product
     } catch (error) {
-      console.error('Error fetching total quantity:', error);
+      console.error('Error fetching product or total quantity:', error);
       setTotalQuantity(null);
     }
   };
@@ -75,8 +81,8 @@ const ProductList = () => {
   };
 
   const editProduct = (product) => {
-    setEditingProduct(product);
-    setShowModal(true);
+    setEditingProduct(product);  // Set the product to be edited
+    setShowModal(true);          // Show the modal
   };
 
   const filterExpiredProducts = () => {
@@ -95,8 +101,8 @@ const ProductList = () => {
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             onClick={() => {
-              setEditingProduct(null);
-              setShowModal(true);
+              setEditingProduct(null); // Reset the editing product
+              setShowModal(true);      // Show the modal for creating a new product
             }}
           >
             Add Stock / Create Product
@@ -142,9 +148,9 @@ const ProductList = () => {
             <tbody className="text-gray-600 text-sm">
               {filteredProducts.map((product) => {
                 const stockClass =
-                  product.total_stock === 0
+                  product.quantity === 0
                     ? 'bg-red-100'
-                    : product.total_stock < 10
+                    : product.quantity < 10
                     ? 'bg-yellow-100'
                     : '';
 
@@ -198,11 +204,20 @@ const ProductList = () => {
         </div>
       )}
 
-      {showModal && (
+      {/* Show ProductForm for creating a new product */}
+      {showModal && !editingProduct && (
         <ProductForm
           setShowModal={setShowModal}
           fetchProducts={fetchProducts}
-          editingProduct={editingProduct}
+        />
+      )}
+
+      {/* Show ProductEditForm for editing an existing product */}
+      {showModal && editingProduct && (
+        <ProductEditForm
+          product={editingProduct}
+          setShowModal={setShowModal}
+          fetchProducts={fetchProducts}
         />
       )}
     </div>

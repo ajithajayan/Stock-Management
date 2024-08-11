@@ -9,6 +9,10 @@ from django.core.validators import MinValueValidator
 from django.utils.crypto import get_random_string
 from django.dispatch import receiver
 from django.db.models.signals import post_save, pre_save
+from django.utils.crypto import get_random_string
+import barcode
+from barcode.writer import ImageWriter
+from io import BytesIO
 
 # Supplier model
 class Supplier(models.Model):
@@ -59,16 +63,18 @@ class Product(models.Model):
                 self.product_code = f'P{last_code + 1}'
             else:
                 self.product_code = 'P5001'  # Start from P5001 if no products exist
+
+        # Generate barcode if not provided
+        if not self.barcode:
+            self.barcode = self.generate_unique_barcode()
+        
         super().save(*args, **kwargs)
 
     def generate_unique_barcode(self):
         while True:
-            new_barcode = get_random_string(12, allowed_chars='0123456789')
-            if not Product.objects.filter(barcode=new_barcode).exists():
-                return new_barcode
-
-    def __str__(self):
-        return f"{self.name} - {self.product_code}"
+            barcode_number = get_random_string(12, allowed_chars='0123456789')
+            if not Product.objects.filter(barcode=barcode_number).exists():
+                return barcode_number
 
 
 class TotalStock(models.Model):
