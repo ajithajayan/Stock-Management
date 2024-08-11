@@ -40,12 +40,28 @@ class BrandDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 # Product Views
 class ProductListCreateView(generics.ListCreateAPIView):
-    queryset = Product.objects.all()
+    queryset = Product.objects.select_related('brand', 'category', 'supplier').all()
     serializer_class = ProductSerializer
+
+    def perform_create(self, serializer):
+        # This method is called when a new product is being created
+        serializer.save()
+        # Any additional business logic can be added here, if needed
 
 class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
+    def perform_update(self, serializer):
+        # Automatically called when an instance is being updated
+        serializer.save()
+        # If you need to recalculate stocks or perform other actions post-update, do it here
+
+    def perform_destroy(self, instance):
+        # Handle any cleanup or stock adjustments before deleting a product
+        instance.delete()  # Delete the product
+        # Potentially update TotalStock here if needed
+
 
 # Branch Views
 class BranchListCreateView(generics.ListCreateAPIView):
@@ -55,6 +71,7 @@ class BranchListCreateView(generics.ListCreateAPIView):
 class BranchDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
+    lookup_field = 'branch_code'
 
 # Product In Transaction Views
 class ProductInTransactionListCreateView(generics.ListCreateAPIView):

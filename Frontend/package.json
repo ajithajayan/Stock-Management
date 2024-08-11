@@ -59,6 +59,7 @@
     "router-dom": "^2.2.11",
     "simplebar-react": "^3.2.4",
     "styled-components": "^5.3.0",
+    "sweetalert2": "^11.12.4",
     "tailwindcss-bootstrap": "^0.1.2",
     "three": "^0.121.1",
     "vanta": "^0.5.24",

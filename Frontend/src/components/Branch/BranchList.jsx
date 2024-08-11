@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import BranchModal from './BranchModal';
 import { baseUrl } from '../../utils/constants/Constants';
 
 const BranchList = () => {
   const [branches, setBranches] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [editingBranch, setEditingBranch] = useState(null); // State to store the branch being edited
 
   useEffect(() => {
     fetchBranches();
@@ -25,9 +27,32 @@ const BranchList = () => {
     try {
       await axios.delete(`${baseUrl}store/branches/${branchCode}/`);
       fetchBranches(); // Refresh the branch list after deletion
+      Swal.fire('Deleted!', 'Branch has been deleted.', 'success');
     } catch (error) {
       console.error('Error deleting branch:', error);
     }
+  };
+
+  const confirmDelete = (branchCode) => {
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        deleteBranch(branchCode);
+      }
+    });
+  };
+
+  const editBranch = (branch) => {
+    setEditingBranch(branch);
+    setShowModal(true);
   };
 
   return (
@@ -36,7 +61,10 @@ const BranchList = () => {
         <h2 className="text-2xl font-bold">Branches</h2>
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-          onClick={() => setShowModal(true)}
+          onClick={() => {
+            setEditingBranch(null);
+            setShowModal(true);
+          }}
         >
           Create Branch
         </button>
@@ -61,10 +89,16 @@ const BranchList = () => {
                   <td className="py-3 px-6 text-left">{branch.name}</td>
                   <td className="py-3 px-6 text-left">{branch.location}</td>
                   <td className="py-3 px-6 text-left">{branch.contact_details}</td>
-                  <td className="py-3 px-6 text-center">
+                  <td className="py-3 px-6 text-center space-x-2">
+                    <button
+                      className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
+                      onClick={() => editBranch(branch)}
+                    >
+                      Edit
+                    </button>
                     <button
                       className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                      onClick={() => deleteBranch(branch.branch_code)}
+                      onClick={() => confirmDelete(branch.branch_code)}
                     >
                       Delete
                     </button>
@@ -79,9 +113,10 @@ const BranchList = () => {
       )}
 
       {showModal && (
-        <BranchModal 
+        <BranchModal
           setShowModal={setShowModal}
           fetchBranches={fetchBranches}
+          editingBranch={editingBranch} // Pass the branch being edited to the modal
         />
       )}
     </div>

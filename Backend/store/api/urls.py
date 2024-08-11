@@ -30,7 +30,7 @@ urlpatterns = [
 
     # Branch URLs
     path('branches/', BranchListCreateView.as_view(), name='branch-list-create'),
-    path('branches/<int:pk>/', BranchDetailView.as_view(), name='branch-detail'),
+    path('branches/<str:branch_code>/', BranchDetailView.as_view(), name='branch-detail'),
 
     # Product In Transaction URLs
     path('product-in-transactions/', ProductInTransactionListCreateView.as_view(), name='product-in-transaction-list-create'),

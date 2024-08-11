@@ -29,7 +29,23 @@ class BrandSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
+        fields = '__all__'  # Serialize all fields
+        extra_kwargs = {
+            'barcode': {'read_only': True},  # Barcode is automatically generated
+            'product_code': {'required': False}  # Product code is auto-generated if not provided
+        }
+
+    def create(self, validated_data):
+        # Handle automatic product code generation in the model save
+        return Product.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        # Update instance
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
 
 # Branch Serializer
 class BranchSerializer(serializers.ModelSerializer):

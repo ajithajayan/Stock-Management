@@ -30,20 +30,46 @@ const navConfig = [
     icon: icon('ic_analytics'),
   },
   {
-    title: 'Order List',
-    path: '/admincontrol/order',
+    title: 'Brand',
+    path: '/admincontrol/Brands',
     icon: icon('ic_blog'),
   },
   {
-    title: 'Pending',
-    path: '/admincontrol/pending-order',
+    title: 'Category',
+    path: '/admincontrol/Categories',
     icon: icon('ic_lock'),
   },
-  // {
-  //   title: 'Not found',
-  //   path: '/404',
-  //   icon: icon('ic_disabled'),
-  // },
+  {
+    title: 'Branch',
+    path: '/admincontrol/Branches',
+    icon: icon('ic_blog'),
+  },
+  {
+    title: 'Supplier',
+    path: '/admincontrol/Suppliers',
+    icon: icon('ic_lock'),
+  },
+  {
+    title: 'Products',
+    path: '/admincontrol/Products',
+    icon: icon('ic_blog'),
+  },
+  {
+    title: 'Supplier Orders',
+    path: '/admincontrol/Supplier-Orders',
+    icon: icon('ic_lock'),
+  },
+  {
+    title: 'Branch Orders',
+    path: '/admincontrol/Branch-Orders',
+    icon: icon('ic_blog'),
+  },
+
+  {
+    title: 'Defective Products',
+    path: '/admincontrol/Defectives',
+    icon: icon('ic_disabled'),
+  },
 ];
 
 export default navConfig;

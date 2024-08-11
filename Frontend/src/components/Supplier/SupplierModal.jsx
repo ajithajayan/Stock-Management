@@ -1,99 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { baseUrl } from '../../utils/constants/Constants';
 
-const SupplierModal = ({ setShowModal, fetchSuppliers }) => {
-  const [supplierName, setSupplierName] = useState('');
-  const [mobileNumber, setMobileNumber] = useState('');
-  const [email, setEmail] = useState('');
-  const [location, setLocation] = useState('');
+const SupplierModal = ({ setShowModal, fetchSuppliers, supplier }) => {
+  const [name, setName] = useState(supplier?.name || '');
+  const [mobileNumber, setMobileNumber] = useState(supplier?.mobile_number || '');
+  const [email, setEmail] = useState(supplier?.email || '');
+  const [location, setLocation] = useState(supplier?.location || '');
 
-  const handleCreateSupplier = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const data = {
+      name,
+      mobile_number: mobileNumber,
+      email,
+      location,
+    };
+
     try {
-      await axios.post(baseUrl + 'store/suppliers/', {
-        name: supplierName,
-        mobile_number: mobileNumber,
-        email: email,
-        location: location,
-      });
-      fetchSuppliers(); // Refresh the supplier list after creation
-      setShowModal(false); // Close the modal
+      if (supplier) {
+        await axios.put(`${baseUrl}store/suppliers/${supplier.id}/`, data);
+      } else {
+        await axios.post(baseUrl + 'store/suppliers/', data);
+      }
+      fetchSuppliers();
+      setShowModal(false);
     } catch (error) {
-      console.error('Error creating supplier:', error);
+      console.error('Error saving supplier:', error);
     }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded shadow-md w-1/3">
-        <h2 className="text-2xl font-bold mb-4">Create Supplier</h2>
-        <form onSubmit={handleCreateSupplier}>
+    <div className="fixed inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
+      <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">{supplier ? 'Edit Supplier' : 'Create Supplier'}</h2>
+          <button
+            className="text-gray-600 hover:text-gray-800"
+            onClick={() => setShowModal(false)}
+          >
+            &#10005;
+          </button>
+        </div>
+        <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="supplierName">
-              Supplier Name
-            </label>
+            <label className="block text-gray-700">Supplier Name</label>
             <input
               type="text"
-              id="supplierName"
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              className="w-full px-3 py-2 border rounded"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="mobileNumber">
-              Mobile Number
-            </label>
+            <label className="block text-gray-700">Mobile Number</label>
             <input
               type="text"
-              id="mobileNumber"
+              className="w-full px-3 py-2 border rounded"
               value={mobileNumber}
               onChange={(e) => setMobileNumber(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
-              Email
-            </label>
+            <label className="block text-gray-700">Email</label>
             <input
               type="email"
-              id="email"
+              className="w-full px-3 py-2 border rounded"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
           </div>
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="location">
-              Location
-            </label>
+            <label className="block text-gray-700">Location</label>
             <input
               type="text"
-              id="location"
+              className="w-full px-3 py-2 border rounded"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
           </div>
-          <div className="flex justify-between">
+          <div className="flex justify-end">
             <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
-              Create
-            </button>
-            <button
-              type="button"
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              onClick={() => setShowModal(false)}
-            >
-              Cancel
+              {supplier ? 'Update' : 'Create'}
             </button>
           </div>
         </form>

@@ -23,6 +23,10 @@ import VarificationDoc from "../../pages/admin/VarificationDoc";
 import Order from "../../pages/admin/Order";
 import PendingOrder from "../../pages/admin/PendingOrder";
 import BranchList from "../../components/Branch/BranchList";
+import BrandList from "../../components/Brand/BrandList";
+import CategoryList from "../../components/Categories/CategoryList";
+import SupplierList from "../../components/Supplier/SupplierList";
+import ProductList from "../../components/Products/ProductList";
 
 function AdminWrapper() {
   const routes = useRoutes([
@@ -46,9 +50,11 @@ function AdminWrapper() {
       ),
       children: [
         { path: "/", element: <Dashboard /> },
-        { path: "/order", element: <BranchList/> },
-        { path: "/pending-order", element: <PendingOrder /> },
-        
+        { path: "/Brands", element: <BrandList/> },
+        { path: "/Categories", element: <CategoryList/> },
+        { path: "/Branches", element: <BranchList/> },
+        { path: "/Suppliers", element: <SupplierList /> },
+        { path: "/Products", element: <ProductList /> },
       ],
     },
     {
