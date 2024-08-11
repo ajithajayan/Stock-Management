@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import AsyncSelect from 'react-select/async';
 import ProductForm from './ProductForm';
 import { baseUrl } from '../../utils/constants/Constants';
 import Swal from 'sweetalert2';
@@ -9,6 +10,8 @@ const ProductList = () => {
   const [showModal, setShowModal] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showExpiredOnly, setShowExpiredOnly] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [totalQuantity, setTotalQuantity] = useState(null);
 
   useEffect(() => {
     fetchProducts();
@@ -20,6 +23,32 @@ const ProductList = () => {
       setProducts(response.data.results);
     } catch (error) {
       console.error('Error fetching products:', error);
+    }
+  };
+
+  const loadProductIds = async (inputValue) => {
+    if (!inputValue) return [];
+    const response = await axios.get(`${baseUrl}store/products/search_codes/?query=${inputValue}`);
+    return response.data.map(product => ({ label: product.product_code, value: product.product_code }));
+  };
+
+  const handleProductIdChange = async (selectedOption) => {
+    if (!selectedOption) {
+      setSelectedProduct(null);
+      setTotalQuantity(null);
+      return;
+    }
+
+    const productCode = selectedOption.value;
+    setSelectedProduct(productCode);
+
+    // Fetch total quantity for the selected product code
+    try {
+      const response = await axios.get(`${baseUrl}store/products/${productCode}/total_stock/`);
+      setTotalQuantity(response.data.total_stock);
+    } catch (error) {
+      console.error('Error fetching total quantity:', error);
+      setTotalQuantity(null);
     }
   };
 
@@ -81,6 +110,17 @@ const ProductList = () => {
         </div>
       </div>
 
+      {/* Search bar for product ID */}
+      <div className="my-4">
+        <AsyncSelect
+          loadOptions={loadProductIds}
+          onChange={handleProductIdChange}
+          isClearable
+          placeholder="Search by Product ID..."
+          className="w-full"
+        />
+      </div>
+
       {filteredProducts.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white shadow-md rounded">
@@ -92,7 +132,10 @@ const ProductList = () => {
                 <th className="py-3 px-6 text-left">Category</th>
                 <th className="py-3 px-6 text-left">Brand</th>
                 <th className="py-3 px-6 text-left">Supplier</th>
-                <th className="py-3 px-6 text-left">Total Stock</th>
+                <th className="py-3 px-6 text-left">Purchase Date</th>
+                <th className="py-3 px-6 text-left">Manufacturing Date</th>
+                <th className="py-3 px-6 text-left">Expiry Date</th>
+                <th className="py-3 px-6 text-left">Quantity</th>
                 <th className="py-3 px-6 text-center">Actions</th>
               </tr>
             </thead>
@@ -116,13 +159,16 @@ const ProductList = () => {
                     <td className="py-3 px-6 text-left">{product.category_name}</td>
                     <td className="py-3 px-6 text-left">{product.brand_name}</td>
                     <td className="py-3 px-6 text-left">{product.supplier_name}</td>
-                    <td className="py-3 px-6 text-left">{product.total_stock}</td>
+                    <td className="py-3 px-6 text-left">{product.purchase_date}</td>
+                    <td className="py-3 px-6 text-left">{product.manufacturing_date}</td>
+                    <td className="py-3 px-6 text-left">{product.expiry_date}</td>
+                    <td className="py-3 px-6 text-left">{product.quantity}</td>
                     <td className="py-3 px-6 text-center space-x-2">
                       <button
                         className="bg-yellow-500 text-white px-4 py-2 mb-2 rounded hover:bg-yellow-600"
                         onClick={() => editProduct(product)}
                       >
-                        Add Stock
+                        Edit
                       </button>
                       <button
                         className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -140,6 +186,15 @@ const ProductList = () => {
       ) : (
         <div className="text-center py-8 text-gray-500">
           No products available. Add stock or create a new product to get started.
+        </div>
+      )}
+
+      {/* Display total quantity for selected product ID in a decorative box */}
+      {selectedProduct && totalQuantity !== null && (
+        <div className="mt-4 bg-gradient-to-r from-blue-400 to-blue-600 p-6 rounded-lg shadow-lg text-white">
+          <h3 className="text-xl font-bold mb-2">Total Quantity</h3>
+          <p className="text-3xl font-extrabold">{totalQuantity}</p>
+          <p className="mt-2 text-sm">Product ID: {selectedProduct}</p>
         </div>
       )}
 

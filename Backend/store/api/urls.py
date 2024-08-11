@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import (
-    SupplierListCreateView, SupplierDetailView,
+    ProductCodeSearchView, SupplierListCreateView, SupplierDetailView,
     CategoryListCreateView, CategoryDetailView,
     BrandListCreateView, BrandDetailView,
     ProductListCreateView, ProductDetailView,
@@ -8,7 +8,7 @@ from .views import (
     ProductInTransactionListCreateView, ProductInTransactionDetailView,
     ProductOutTransactionListCreateView, ProductOutTransactionDetailView,
     PurchaseRequestListCreateView, PurchaseRequestDetailView,
-    DamageProductTransactionListCreateView, DamageProductTransactionDetailView
+    DamageProductTransactionListCreateView, DamageProductTransactionDetailView,GetTotalStockView
 )
 
 urlpatterns = [
@@ -27,6 +27,8 @@ urlpatterns = [
     # Product URLs
     path('products/', ProductListCreateView.as_view(), name='product-list-create'),
     path('products/<int:pk>/', ProductDetailView.as_view(), name='product-detail'),
+    path('products/<str:product_code>/total_stock/', GetTotalStockView.as_view(), name='get_total_stock'),
+    path('products/search_codes/', ProductCodeSearchView.as_view(), name='search_product_codes'),
 
     # Branch URLs
     path('branches/', BranchListCreateView.as_view(), name='branch-list-create'),

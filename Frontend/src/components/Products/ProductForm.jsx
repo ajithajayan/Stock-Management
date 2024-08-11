@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
+import AsyncSelect from 'react-select/async'; // Import AsyncSelect for dynamic loading
 import { baseUrl } from '../../utils/constants/Constants';
 
 const ProductForm = ({ fetchProducts, setShowModal }) => {
   const [productCode, setProductCode] = useState('');
   const [name, setName] = useState('');
   const [purchaseDate, setPurchaseDate] = useState('');
-  const [unit, setUnit] = useState(1);
   const [quantity, setQuantity] = useState(0);
   const [expiryDate, setExpiryDate] = useState('');
   const [manufacturingDate, setManufacturingDate] = useState('');
+  const [openingStock, setOpeningStock] = useState(0);
 
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [selectedUnit, setSelectedUnit] = useState({ label: 'Pieces', value: 'pieces' });
 
   const [brands, setBrands] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [suppliers, setSuppliers] =useState([]);
+  const [suppliers, setSuppliers] = useState([]);
 
   const [isExistingProduct, setIsExistingProduct] = useState(false);
 
@@ -43,32 +45,54 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
     setSuppliers(response.data.results.map(supplier => ({ label: supplier.name, value: supplier.id })));
   };
 
-  const checkProductCode = async () => {
-    if (!productCode) return;
+  const loadProductCodes = async (inputValue) => {
+    if (!inputValue) return [];
+    const response = await axios.get(`${baseUrl}store/products/search_codes/?query=${inputValue}`);
+    return response.data.map(product => ({ label: product.product_code, value: product.product_code }));
+  };
 
+  const handleProductCodeChange = async (selectedOption) => {
+    if (!selectedOption) {
+      resetFormFields();
+      return;
+    }
+
+    const code = selectedOption.value;
+    setProductCode(code);
+    await checkProductCode(code);
+  };
+
+  const checkProductCode = async (code) => {
     try {
-      const response = await axios.get(`${baseUrl}store/products/${productCode}/`);
-      if (response.data) {
+      const productResponse = await axios.get(`${baseUrl}store/products/${code}/`);
+      if (productResponse.data) {
         setIsExistingProduct(true);
-        setName(response.data.name);
-        setSelectedBrand({ label: response.data.brand_name, value: response.data.brand });
-        setSelectedCategory({ label: response.data.category_name, value: response.data.category });
-        setSelectedSupplier({ label: response.data.supplier_name, value: response.data.supplier });
+        setName(productResponse.data.name);
+        setSelectedBrand({ label: productResponse.data.brand_name, value: productResponse.data.brand });
+        setSelectedCategory({ label: productResponse.data.category_name, value: productResponse.data.category });
+        setSelectedSupplier({ label: productResponse.data.supplier_name, value: productResponse.data.supplier });
+        setSelectedUnit({ label: productResponse.data.unit_type, value: productResponse.data.unit_type });
+        
+        // Fetch total stock and set it as the opening stock
+        const stockResponse = await axios.get(`${baseUrl}store/products/${code}/total_stock/`);
+        setOpeningStock(stockResponse.data.total_stock);
       } else {
-        setIsExistingProduct(false);
-        setName('');
-        setSelectedBrand(null);
-        setSelectedCategory(null);
-        setSelectedSupplier(null);
+        resetFormFields();
       }
     } catch (error) {
-      setIsExistingProduct(false);
-      setName('');
-      setSelectedBrand(null);
-      setSelectedCategory(null);
-      setSelectedSupplier(null);
+      resetFormFields();
     }
   };
+
+  const resetFormFields = () => {
+    setIsExistingProduct(false);
+    setName('');
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSupplier(null);
+    setSelectedUnit({ label: 'Pieces', value: 'pieces' });
+    setOpeningStock(0);
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -76,13 +100,14 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
       product_code: productCode || null, // Allow empty product code
       name,
       purchase_date: purchaseDate,
-      unit,
+      unit: selectedUnit.value,
       quantity,
       expiry_date: expiryDate,
       manufacturing_date: manufacturingDate,
       brand: selectedBrand?.value,
       category: selectedCategory?.value,
       supplier: selectedSupplier?.value,
+      opening_stock: openingStock + quantity, // Add the quantity to opening stock for total stock
     };
 
     try {
@@ -97,6 +122,16 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
       console.error('Error saving product:', error);
     }
   };
+
+  // Unit options
+  const unitOptions = [
+    { label: 'Pieces', value: 'pieces' },
+    { label: 'Kilograms', value: 'kilograms' },
+    { label: 'Liters', value: 'liters' },
+    { label: 'Meters', value: 'meters' },
+    { label: 'Pounds', value: 'pounds' },
+    // Add more unit options as needed
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -116,15 +151,13 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Product Code (Optional)</label>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={productCode}
-                    onChange={(e) => setProductCode(e.target.value)}
-                    onBlur={checkProductCode}
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
+                <AsyncSelect
+                  loadOptions={loadProductCodes}
+                  onChange={handleProductCodeChange}
+                  isClearable
+                  placeholder="Type to search..."
+                  className="mt-1 block w-full"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Product Name</label>
@@ -149,12 +182,12 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700">Unit</label>
-                <input
-                  type="number"
-                  value={unit}
-                  onChange={(e) => setUnit(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  required
+                <Select
+                  value={selectedUnit}
+                  onChange={setSelectedUnit}
+                  options={unitOptions}
+                  className="mt-1 block w-full"
+                  isSearchable
                 />
               </div>
               <div>
@@ -185,6 +218,16 @@ const ProductForm = ({ fetchProducts, setShowModal }) => {
                   onChange={(e) => setManufacturingDate(e.target.value)}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                   required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Opening Stock</label>
+                <input
+                  type="number"
+                  value={openingStock}
+                  onChange={(e) => setOpeningStock(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  readOnly
                 />
               </div>
               <div>

@@ -10,6 +10,10 @@ from .serializers import (
     ProductInTransactionSerializer, ProductOutTransactionSerializer,
     PurchaseRequestSerializer, DamageProductTransactionSerializer
 )
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from store.models import TotalStock
 
 # Supplier Views
 class SupplierListCreateView(generics.ListCreateAPIView):
@@ -62,6 +66,23 @@ class ProductDetailView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()  # Delete the product
         # Potentially update TotalStock here if needed
 
+# To get the total stock  of the product
+class GetTotalStockView(APIView):
+    def get(self, request, product_code, format=None):
+        try:
+            total_stock = TotalStock.objects.get(product_code=product_code)
+            return Response({'total_stock': total_stock.total_quantity}, status=status.HTTP_200_OK)
+        except TotalStock.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class ProductCodeSearchView(APIView):
+    def get(self, request, format=None):
+        query = request.GET.get('query', '')
+        if query:
+            products = Product.objects.filter(product_code__icontains=query)[:10]
+            product_codes = products.values('product_code')
+            return Response(product_codes, status=status.HTTP_200_OK)
+        return Response({'error': 'No query provided'}, status=status.HTTP_400_BAD_REQUEST)
 
 # Branch Views
 class BranchListCreateView(generics.ListCreateAPIView):

@@ -7,8 +7,8 @@ from barcode.writer import ImageWriter
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils.crypto import get_random_string
-from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db.models.signals import post_save, pre_save
 
 # Supplier model
 class Supplier(models.Model):
@@ -35,23 +35,30 @@ class Brand(models.Model):
         return self.name
 
 
+
 class Product(models.Model):
     name = models.CharField(max_length=255)
     purchase_date = models.DateField()
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, related_name='products')
-    unit = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    unit_type = models.CharField(max_length=100, default='pieces')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products')
     brand = models.ForeignKey(Brand, on_delete=models.CASCADE, related_name='products')
     expiry_date = models.DateField()
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(0)])
     manufacturing_date = models.DateField()
-    product_code = models.CharField(max_length=100, blank=True)
+    product_code = models.CharField(max_length=100, blank=True, null=True)  # Allow null and blank
     barcode = models.CharField(max_length=100, unique=True, blank=True, null=True)
     opening_stock = models.PositiveIntegerField(default=0)
 
     def save(self, *args, **kwargs):
-        if not self.barcode:
-            self.barcode = self.generate_unique_barcode()
+        # Generate a product code if not provided
+        if not self.product_code:
+            last_product = Product.objects.filter(product_code__startswith='P').order_by('-id').first()
+            if last_product and last_product.product_code:
+                last_code = int(last_product.product_code[1:])  # Strip the 'P' and convert to int
+                self.product_code = f'P{last_code + 1}'
+            else:
+                self.product_code = 'P5001'  # Start from P5001 if no products exist
         super().save(*args, **kwargs)
 
     def generate_unique_barcode(self):
@@ -63,6 +70,7 @@ class Product(models.Model):
     def __str__(self):
         return f"{self.name} - {self.product_code}"
 
+
 class TotalStock(models.Model):
     product_code = models.CharField(max_length=100, unique=True)
     total_quantity = models.PositiveIntegerField(default=0)
@@ -70,18 +78,23 @@ class TotalStock(models.Model):
     def __str__(self):
         return f"{self.product_code}: {self.total_quantity}"
 
+@receiver(pre_save, sender=Product)
+def set_opening_stock(sender, instance, **kwargs):
+    if not instance._state.adding and instance.product_code:
+        existing_total = TotalStock.objects.filter(product_code=instance.product_code).first()
+        if existing_total:
+            instance.opening_stock = existing_total.total_quantity
+
 @receiver(post_save, sender=Product)
 def update_total_stock(sender, instance, created, **kwargs):
-    product_code = instance.product_code
-    total_stock, _ = TotalStock.objects.get_or_create(product_code=product_code)
+    total_stock, _ = TotalStock.objects.get_or_create(product_code=instance.product_code)
     if created:
-        # If it's a new product, add its quantity to the total stock
         total_stock.total_quantity += instance.quantity
     else:
-        # If the product is updated, recalculate the total stock from all products with the same product code
-        total_quantity = Product.objects.filter(product_code=product_code).aggregate(total=models.Sum('quantity'))['total']
-        total_stock.total_quantity = total_quantity if total_quantity else 0
+        # Recalculate total stock to handle manual edits to quantity
+        total_stock.total_quantity = Product.objects.filter(product_code=instance.product_code).aggregate(total=models.Sum('quantity'))['total'] or 0
     total_stock.save()
+
 
 # Branch model
 class Branch(models.Model):

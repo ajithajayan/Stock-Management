@@ -6,6 +6,7 @@ from store.models import (
     PurchaseRequest, PurchaseRequestDetail,
     DamageProductTransaction, DamageProductTransactionDetail
 )
+from django.utils.crypto import get_random_string
 
 # Supplier Serializer
 class SupplierSerializer(serializers.ModelSerializer):
@@ -27,24 +28,32 @@ class BrandSerializer(serializers.ModelSerializer):
 
 # Product Serializer
 class ProductSerializer(serializers.ModelSerializer):
+    # Add fields to get the name of the related objects
+    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
+    category_name = serializers.CharField(source='category.name', read_only=True)
+    brand_name = serializers.CharField(source='brand.name', read_only=True)
+
     class Meta:
         model = Product
-        fields = '__all__'  # Serialize all fields
+        fields = '__all__'
         extra_kwargs = {
-            'barcode': {'read_only': True},  # Barcode is automatically generated
-            'product_code': {'required': False}  # Product code is auto-generated if not provided
+            'barcode': {'read_only': True},
+            'product_code': {'required': False, 'allow_blank': True},
+            'supplier': {'write_only': True},  # Keep supplier ID write-only
+            'category': {'write_only': True},  # Keep category ID write-only
+            'brand': {'write_only': True},     # Keep brand ID write-only
         }
 
     def create(self, validated_data):
-        # Handle automatic product code generation in the model save
-        return Product.objects.create(**validated_data)
+        if not validated_data.get('product_code'):
+            last_product = Product.objects.filter(product_code__startswith='P').order_by('-id').first()
+            if last_product and last_product.product_code:
+                last_code = int(last_product.product_code[1:])  # Strip the 'P' and convert to int
+                validated_data['product_code'] = f'P{last_code + 1}'
+            else:
+                validated_data['product_code'] = 'P5001'  # Start from P5001 if no products exist
+        return super().create(validated_data)
 
-    def update(self, instance, validated_data):
-        # Update instance
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
 
 
 # Branch Serializer
