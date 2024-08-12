@@ -31,6 +31,11 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Sum, F
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
 
 User = get_user_model()
 
@@ -89,17 +94,31 @@ class LogoutView(APIView):
 
     def post(self, request):
         try:
-            print('log out')
-            refresh_token = request.data["refresh_token"]
+            refresh_token = request.data.get("refresh_token")
+            if refresh_token is None:
+                return Response({"error": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
             token = RefreshToken(refresh_token)
             token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
+
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
-            print("401 error mannnn")
-            # return Response(status=status.HTTP_400_BAD_REQUEST)
-            return Response(status=status.HTTP_401_UNAUTHORIZED)
+            # Log the exception for debugging purposes
+            print(f"Logout failed: {str(e)}")
+            return Response({"error": "Invalid token or token blacklisting failed."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+class UserDetailsView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
+        data = {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'is_superuser': user.is_superuser,
+        }
+        return Response(data)
     
 

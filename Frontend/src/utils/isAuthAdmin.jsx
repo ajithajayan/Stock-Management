@@ -1,4 +1,4 @@
-import { jwtDecode } from "jwt-decode";
+import {jwtDecode} from 'jwt-decode';
 import axios from "axios";
 import Cookies from "js-cookie";
 import { baseUrl } from "./constants/Constants";
@@ -7,7 +7,7 @@ const updateAdminToken = async () => {
   const refreshToken = Cookies.get("refresh");
 
   try {
-    const res = await axios.post(baseUrl + "auth/token/refresh", {
+    const res = await axios.post(baseUrl + "auth/token/refresh/", {
       refresh: refreshToken,
     });
 
@@ -62,7 +62,8 @@ const isAuthAdmin = async () => {
     const updateSuccess = await updateAdminToken();
 
     if (updateSuccess) {
-      let decoded = jwtDecode(accessToken);
+      const newAccessToken = Cookies.get("access");
+      let decoded = jwtDecode(newAccessToken);
       let checkAdmin = await fetchisAdmin();
       return {
         name: decoded.first_name,

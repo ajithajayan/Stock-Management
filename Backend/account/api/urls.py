@@ -15,6 +15,7 @@ urlpatterns = [
     # ***********************Admin login****************************
     path("login", views.UserLogin.as_view(), name="user-login"),
     path('logout', views.LogoutView.as_view(), name='logout'),
+    path('user/details/', views.UserDetailsView.as_view(), name='user-details'),
 
 
     # ************************* Order Summary ************************
